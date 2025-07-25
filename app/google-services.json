@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "941589494370",
+    "project_id": "gps-tracker-279a1",
+    "storage_bucket": "gps-tracker-279a1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:941589494370:android:711c3c77ff13b161972f3b",
+        "android_client_info": {
+          "package_name": "com.sgs.gpstracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAoW0PKqlp6rxgY1n7TxUjAbWx_KPnUMcI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
