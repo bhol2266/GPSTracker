@@ -2,6 +2,7 @@
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:map="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
+    android:fitsSystemWindows="true"
     android:layout_height="match_parent">
 
     <!-- Google Map -->
@@ -23,13 +24,24 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentEnd="true" />
 
+    <Button
+        android:id="@+id/tracking"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/refreshBtn"
+        android:text="Tracking OFF"
+        android:backgroundTint="#CC0C00"
+        android:textColor="#fff"
+        android:layout_marginRight="16dp"
+        android:layout_marginTop="5dp"
+        android:layout_alignParentEnd="true" />
+
     <!-- Horizontal User Slider -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/userSlider"
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:layout_marginBottom="8dp"
         android:padding="8dp"
         android:background="#ffffff"
         android:elevation="8dp" />

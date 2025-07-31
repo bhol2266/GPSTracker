@@ -1,11 +1,16 @@
 package com.sgs.gpstracker;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.PowerManager;
+import android.provider.Settings;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -15,9 +20,11 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.google.firebase.FirebaseApp;
 import com.sgs.gpstracker.services.LocationBroadcastService;
+import com.sgs.gpstracker.utils.FirebaseUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,8 +39,6 @@ public class SetupActivity extends AppCompatActivity {
     String deviceName;
     String name;
 
-    private static final int LOCATION_PERMISSION_REQUEST_CODE = 101;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,14 +51,11 @@ public class SetupActivity extends AppCompatActivity {
         deviceText = findViewById(R.id.deviceText);
         startBtn = findViewById(R.id.startBtn);
 
-        nameInput.setText("Rosan");
+        nameInput.setText("Rosan"); // optional default
 
-        // Generate device name
         String manufacturer = Build.MANUFACTURER;
         String model = Build.MODEL;
         deviceName = model.startsWith(manufacturer) ? model : manufacturer + " " + model;
-
-        // Set device name to UI
         deviceText.setText(deviceName);
 
         startBtn.setOnClickListener(v -> {
@@ -63,64 +65,59 @@ public class SetupActivity extends AppCompatActivity {
                 return;
             }
 
-            if (hasRequiredPermissions()) {
-                saveUserAndStart();
-            } else {
-                requestRequiredPermissions();
-            }
+            saveUserAndStart();
+
         });
+
+
     }
 
     private void saveUserAndStart() {
+        String deviceId = getDeviceId(this);
+
         SharedPreferences.Editor editor = getSharedPreferences("user", MODE_PRIVATE).edit();
         editor.putString("name", name);
         editor.putString("device", deviceName);
+        editor.putString("deviceId", deviceId);
         editor.apply();
 
-        startService(new Intent(this, LocationBroadcastService.class));
-        startActivity(new Intent(this, AdminPanelActivity.class));
+        FirebaseUtils.uploadUserToRealtimeDB(this, name, deviceName, deviceId,
+                () -> {
+
+                    Intent serviceIntent = new Intent(this, LocationBroadcastService.class);
+                    serviceIntent.putExtra("deviceId", deviceId); // Pass deviceId to the service
+
+                    if (isServiceRunning(LocationBroadcastService.class)) {
+                        stopService(serviceIntent);
+                    }
+
+                    ContextCompat.startForegroundService(this, serviceIntent);
+
+
+                    startActivity(new Intent(this, AdminPanelActivity.class));
+                    finish();
+
+                },
+                () -> Toast.makeText(this, "Error saving user to database", Toast.LENGTH_SHORT).show());
     }
 
-    private boolean hasRequiredPermissions() {
-        boolean fineLocation = ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
-        boolean fgServiceLocation = Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE ||
-                ActivityCompat.checkSelfPermission(this, Manifest.permission.FOREGROUND_SERVICE_LOCATION) == PackageManager.PERMISSION_GRANTED;
 
-        return fineLocation && fgServiceLocation;
+    public String getDeviceId(Context context) {
+        return Settings.Secure.getString(context.getContentResolver(), Settings.Secure.ANDROID_ID);
     }
 
-    private void requestRequiredPermissions() {
-        List<String> permissions = new ArrayList<>();
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            permissions.add(Manifest.permission.ACCESS_FINE_LOCATION);
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.FOREGROUND_SERVICE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-                permissions.add(Manifest.permission.FOREGROUND_SERVICE_LOCATION);
+
+
+    private boolean isServiceRunning(Class<?> serviceClass) {
+        android.app.ActivityManager manager = (android.app.ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (android.app.ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
             }
         }
-        ActivityCompat.requestPermissions(this, permissions.toArray(new String[0]), LOCATION_PERMISSION_REQUEST_CODE);
+        return false;
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            boolean allGranted = true;
-            for (int result : grantResults) {
-                if (result != PackageManager.PERMISSION_GRANTED) {
-                    allGranted = false;
-                    break;
-                }
-            }
 
-            if (allGranted) {
-                saveUserAndStart();
-            } else {
-                Toast.makeText(this, "Permissions are required to start location tracking", Toast.LENGTH_LONG).show();
-            }
-        }
-    }
 }

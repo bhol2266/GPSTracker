@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "941589494370",
+    "firebase_url": "https://gps-tracker-279a1-default-rtdb.asia-southeast1.firebasedatabase.app",
     "project_id": "gps-tracker-279a1",
     "storage_bucket": "gps-tracker-279a1.firebasestorage.app"
   },
