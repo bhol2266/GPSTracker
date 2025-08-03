@@ -64,6 +64,17 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+        Button gotoSMS=findViewById(R.id.gotoSMS);
+        gotoSMS.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Intent intent = new Intent(view.getContext(), SmsLogsActivity.class);
+                startActivity(intent);
+            }
+        });
+
+
+
     }
 
     private boolean isMyServiceRunning(Class<?> serviceClass) {

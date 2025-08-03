@@ -9,10 +9,13 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.provider.Settings;
+import android.text.InputType;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -42,7 +45,6 @@ public class PermissionsCheckActivity extends AppCompatActivity {
             } else {
                 requestAllPermissions();
             }
-
             requestIgnoreBatteryOptimization(); // Ask for battery optimization exclusion
         });
     }
@@ -135,7 +137,6 @@ public class PermissionsCheckActivity extends AppCompatActivity {
                 } else {
                     Toast.makeText(this, "All permissions granted!", Toast.LENGTH_SHORT).show();
                     gotoDashboard();
-
                 }
             } else {
                 Toast.makeText(this, "Some permissions were denied!", Toast.LENGTH_LONG).show();
@@ -152,9 +153,28 @@ public class PermissionsCheckActivity extends AppCompatActivity {
     }
 
     private void gotoDashboard() {
+        showPasswordDialog("Ssss5555");  // current password
+    }
 
+    private void showPasswordDialog(String correctPassword) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Enter Password");
 
-        startActivity(new Intent(PermissionsCheckActivity.this, MainActivity.class));
-        finish();
+        final EditText input = new EditText(this);
+        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        builder.setView(input);
+
+        builder.setPositiveButton("OK", (dialog, which) -> {
+            String enteredPassword = input.getText().toString().trim();
+            if (enteredPassword.equals(correctPassword)) {
+                startActivity(new Intent(PermissionsCheckActivity.this, MainActivity.class));
+                finish();
+            } else {
+                Toast.makeText(this, "Incorrect password", Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
+        builder.show();
     }
 }

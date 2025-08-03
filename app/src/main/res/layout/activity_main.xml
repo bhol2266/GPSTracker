@@ -13,7 +13,8 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:orientation="vertical"
-        android:paddingTop="100dp">
+        android:paddingTop="100dp"
+        tools:ignore="MissingConstraints">
 
         <Button
             android:id="@+id/gotoSetup"
@@ -46,6 +47,17 @@
             android:paddingTop="20dp"
             android:paddingBottom="20dp"
             android:text="Call Logs"
+            android:textSize="30dp"
+
+            tools:ignore="MissingConstraints" />  <Button
+            android:id="@+id/gotoSMS"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="50dp"
+            android:paddingTop="20dp"
+            android:paddingBottom="20dp"
+            android:text="SMS"
+        android:visibility="gone"
             android:textSize="30dp"
 
             tools:ignore="MissingConstraints" />
