@@ -153,7 +153,7 @@ public class PermissionsCheckActivity extends AppCompatActivity {
     }
 
     private void gotoDashboard() {
-        showPasswordDialog("Ssss5555");  // current password
+        showPasswordDialog("5555");  // current password
     }
 
     private void showPasswordDialog(String correctPassword) {
@@ -164,17 +164,38 @@ public class PermissionsCheckActivity extends AppCompatActivity {
         input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         builder.setView(input);
 
-        builder.setPositiveButton("OK", (dialog, which) -> {
-            String enteredPassword = input.getText().toString().trim();
-            if (enteredPassword.equals(correctPassword)) {
-                startActivity(new Intent(PermissionsCheckActivity.this, MainActivity.class));
-                finish();
-            } else {
-                Toast.makeText(this, "Incorrect password", Toast.LENGTH_SHORT).show();
-            }
+        // Add buttons but don't handle validation here
+        builder.setPositiveButton("OK", null); // we'll override later
+        builder.setNegativeButton("Cancel", (dialog, which) -> {
+            // do nothing, prevent closing if you don’t want Cancel
+            // dialog.cancel(); // <-- remove if you want to force password entry
         });
 
-        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
-        builder.show();
+        AlertDialog dialog = builder.create();
+        dialog.setCancelable(false); // disable back press/outside dismiss
+
+        dialog.setOnShowListener(d -> {
+            Button positiveButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            positiveButton.setOnClickListener(v -> {
+                String enteredPassword = input.getText().toString().trim();
+                if (enteredPassword.equals(correctPassword)) {
+                    dialog.dismiss();
+                    startActivity(new Intent(PermissionsCheckActivity.this, MainActivity.class));
+                    finish();
+                } else {
+                    Toast.makeText(this, "Incorrect password", Toast.LENGTH_SHORT).show();
+                    input.setText(""); // clear input (optional)
+                }
+            });
+
+            Button negativeButton = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+            negativeButton.setOnClickListener(v -> {
+                // Do nothing OR show a toast instead
+                Toast.makeText(this, "Password required", Toast.LENGTH_SHORT).show();
+            });
+        });
+
+        dialog.show();
     }
+
 }

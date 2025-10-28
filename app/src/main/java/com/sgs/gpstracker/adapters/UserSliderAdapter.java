@@ -94,7 +94,10 @@ public class UserSliderAdapter extends RecyclerView.Adapter<UserSliderAdapter.Us
 
             requestRef.setValue(true);
         });
-
+        holder.itemView.setOnLongClickListener(v -> {
+            Toast.makeText(v.getContext(), "Hi, it's me", Toast.LENGTH_SHORT).show();
+            return true;
+        });
     }
 
     @Override
